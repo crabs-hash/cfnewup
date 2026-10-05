@@ -1,6 +1,285 @@
 // CFnew - 终端 v3.1
-// 版本: v3.1 
+// 版本: v3.1 + SS-outbound 1.0 (2026-10-05)
+// 本文件为定制版本：请暂停上游自动同步，避免覆盖 SS 功能。
 import { connect as 连接 } from 'cloudflare:sockets';
+/* Embedded @noble/ciphers 1.3.0 and @noble/hashes 1.8.0
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+Copyright (c) 2016 Thomas Pornin <pornin@bolet.org>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+var SsCrypto=(()=>{var ct=Object.defineProperty;var Dt=Object.getOwnPropertyDescriptor;var Ft=Object.getOwnPropertyNames;var vt=Object.prototype.hasOwnProperty;var Wt=(e,t)=>{for(var f in t)ct(e,f,{get:t[f],enumerable:!0})},$t=(e,t,f,n)=>{if(t&&typeof t=="object"||typeof t=="function")for(let s of Ft(t))!vt.call(e,s)&&s!==f&&ct(e,s,{get:()=>t[s],enumerable:!(n=Dt(t,s))||n.enumerable});return e};var kt=e=>$t(ct({},"__esModule",{value:!0}),e);var ae={};Wt(ae,{chacha20poly1305:()=>Vt,md5:()=>Mt});function At(e){return e instanceof Uint8Array||ArrayBuffer.isView(e)&&e.constructor.name==="Uint8Array"}function J(e){if(typeof e!="boolean")throw new Error(`boolean expected, not ${e}`)}function Q(e){if(!Number.isSafeInteger(e)||e<0)throw new Error("positive integer expected, got "+e)}function F(e,...t){if(!At(e))throw new Error("Uint8Array expected");if(t.length>0&&!t.includes(e.length))throw new Error("Uint8Array expected of length "+t+", got length="+e.length)}function ht(e,t=!0){if(e.destroyed)throw new Error("Hash instance has been destroyed");if(t&&e.finished)throw new Error("Hash#digest() has already been called")}function Ut(e,t){F(e);let f=t.outputLen;if(e.length<f)throw new Error("digestInto() expects output buffer of length at least "+f)}function $(e){return new Uint32Array(e.buffer,e.byteOffset,Math.floor(e.byteLength/4))}function k(...e){for(let t=0;t<e.length;t++)e[t].fill(0)}function qt(e){return new DataView(e.buffer,e.byteOffset,e.byteLength)}var Xt=new Uint8Array(new Uint32Array([287454020]).buffer)[0]===68;function Pt(e){if(typeof e!="string")throw new Error("string expected");return new Uint8Array(new TextEncoder().encode(e))}function tt(e){if(typeof e=="string")e=Pt(e);else if(At(e))e=et(e);else throw new Error("Uint8Array expected, got "+typeof e);return e}function Lt(e,t){if(t==null||typeof t!="object")throw new Error("options must be defined");return Object.assign(e,t)}function Bt(e,t){if(e.length!==t.length)return!1;let f=0;for(let n=0;n<e.length;n++)f|=e[n]^t[n];return f===0}var ut=(e,t)=>{function f(n,...s){if(F(n),!Xt)throw new Error("Non little-endian hardware is not yet supported");if(e.nonceLength!==void 0){let u=s[0];if(!u)throw new Error("nonce / iv required");e.varSizeNonce?F(u):F(u,e.nonceLength)}let i=e.tagLength;i&&s[1]!==void 0&&F(s[1]);let r=t(n,...s),o=(u,x)=>{if(x!==void 0){if(u!==2)throw new Error("cipher output not supported");F(x)}},c=!1;return{encrypt(u,x){if(c)throw new Error("cannot encrypt() twice with same key + nonce");return c=!0,F(u),o(r.encrypt.length,x),r.encrypt(u,x)},decrypt(u,x){if(F(u),i&&u.length<i)throw new Error("invalid ciphertext length: smaller than tagLength="+i);return o(r.decrypt.length,x),r.decrypt(u,x)}}}return Object.assign(f,e),f};function lt(e,t,f=!0){if(t===void 0)return new Uint8Array(e);if(t.length!==e)throw new Error("invalid output length, expected "+e+", got: "+t.length);if(f&&!Zt(t))throw new Error("invalid output, must be aligned");return t}function mt(e,t,f,n){if(typeof e.setBigUint64=="function")return e.setBigUint64(t,f,n);let s=BigInt(32),i=BigInt(4294967295),r=Number(f>>s&i),o=Number(f&i),c=n?4:0,l=n?0:4;e.setUint32(t+c,r,n),e.setUint32(t+l,o,n)}function Et(e,t,f){J(f);let n=new Uint8Array(16),s=qt(n);return mt(s,0,BigInt(t),f),mt(s,8,BigInt(e),f),n}function Zt(e){return e.byteOffset%4===0}function et(e){return Uint8Array.from(e)}var Ct=e=>Uint8Array.from(e.split("").map(t=>t.charCodeAt(0))),Gt=Ct("expand 16-byte k"),Yt=Ct("expand 32-byte k"),zt=$(Gt),Jt=$(Yt);function h(e,t){return e<<t|e>>>32-t}function xt(e){return e.byteOffset%4===0}var nt=64,Qt=16,Ot=2**32-1,_t=new Uint32Array;function te(e,t,f,n,s,i,r,o){let c=s.length,l=new Uint8Array(nt),u=$(l),x=xt(s)&&xt(i),w=x?$(s):_t,y=x?$(i):_t;for(let d=0;d<c;r++){if(e(t,f,n,u,r,o),r>=Ot)throw new Error("arx: counter overflow");let g=Math.min(nt,c-d);if(x&&g===nt){let p=d/4;if(d%4!==0)throw new Error("arx: invalid block position");for(let b=0,m;b<Qt;b++)m=p+b,y[m]=w[m]^u[b];d+=nt;continue}for(let p=0,b;p<g;p++)b=d+p,i[b]=s[b]^l[p];d+=g}}function at(e,t){let{allowShortKeys:f,extendNonceFn:n,counterLength:s,counterRight:i,rounds:r}=Lt({allowShortKeys:!1,counterLength:8,counterRight:!1,rounds:20},t);if(typeof e!="function")throw new Error("core must be a function");return Q(s),Q(r),J(i),J(f),(o,c,l,u,x=0)=>{F(o),F(c),F(l);let w=l.length;if(u===void 0&&(u=new Uint8Array(w)),F(u),Q(x),x<0||x>=Ot)throw new Error("arx: counter overflow");if(u.length<w)throw new Error(`arx: output (${u.length}) is shorter than data (${w})`);let y=[],d=o.length,g,p;if(d===32)y.push(g=et(o)),p=Jt;else if(d===16&&f)g=new Uint8Array(32),g.set(o),g.set(o,16),p=zt,y.push(g);else throw new Error(`arx: invalid 32-byte key, got length=${d}`);xt(c)||y.push(c=et(c));let b=$(g);if(n){if(c.length!==24)throw new Error("arx: extended nonce must be 24 bytes");n(p,b,$(c.subarray(0,16)),b),c=c.subarray(16)}let m=16-s;if(m!==c.length)throw new Error(`arx: nonce must be ${m} or 16 bytes`);if(m!==12){let N=new Uint8Array(12);N.set(c,i?0:12-c.length),c=N,y.push(c)}let R=$(c);return te(e,p,b,R,l,u,x,r),k(...y),u}}var j=(e,t)=>e[t++]&255|(e[t++]&255)<<8,pt=class{constructor(t){this.blockLen=16,this.outputLen=16,this.buffer=new Uint8Array(16),this.r=new Uint16Array(10),this.h=new Uint16Array(10),this.pad=new Uint16Array(8),this.pos=0,this.finished=!1,t=tt(t),F(t,32);let f=j(t,0),n=j(t,2),s=j(t,4),i=j(t,6),r=j(t,8),o=j(t,10),c=j(t,12),l=j(t,14);this.r[0]=f&8191,this.r[1]=(f>>>13|n<<3)&8191,this.r[2]=(n>>>10|s<<6)&7939,this.r[3]=(s>>>7|i<<9)&8191,this.r[4]=(i>>>4|r<<12)&255,this.r[5]=r>>>1&8190,this.r[6]=(r>>>14|o<<2)&8191,this.r[7]=(o>>>11|c<<5)&8065,this.r[8]=(c>>>8|l<<8)&8191,this.r[9]=l>>>5&127;for(let u=0;u<8;u++)this.pad[u]=j(t,16+2*u)}process(t,f,n=!1){let s=n?0:2048,{h:i,r}=this,o=r[0],c=r[1],l=r[2],u=r[3],x=r[4],w=r[5],y=r[6],d=r[7],g=r[8],p=r[9],b=j(t,f+0),m=j(t,f+2),R=j(t,f+4),N=j(t,f+6),v=j(t,f+8),K=j(t,f+10),M=j(t,f+12),D=j(t,f+14),A=i[0]+(b&8191),U=i[1]+((b>>>13|m<<3)&8191),L=i[2]+((m>>>10|R<<6)&8191),B=i[3]+((R>>>7|N<<9)&8191),E=i[4]+((N>>>4|v<<12)&8191),_=i[5]+(v>>>1&8191),C=i[6]+((v>>>14|K<<2)&8191),O=i[7]+((K>>>11|M<<5)&8191),H=i[8]+((M>>>8|D<<8)&8191),I=i[9]+(D>>>5|s),a=0,S=a+A*o+U*(5*p)+L*(5*g)+B*(5*d)+E*(5*y);a=S>>>13,S&=8191,S+=_*(5*w)+C*(5*x)+O*(5*u)+H*(5*l)+I*(5*c),a+=S>>>13,S&=8191;let V=a+A*c+U*o+L*(5*p)+B*(5*g)+E*(5*d);a=V>>>13,V&=8191,V+=_*(5*y)+C*(5*w)+O*(5*x)+H*(5*u)+I*(5*l),a+=V>>>13,V&=8191;let T=a+A*l+U*c+L*o+B*(5*p)+E*(5*g);a=T>>>13,T&=8191,T+=_*(5*d)+C*(5*y)+O*(5*w)+H*(5*x)+I*(5*u),a+=T>>>13,T&=8191;let W=a+A*u+U*l+L*c+B*o+E*(5*p);a=W>>>13,W&=8191,W+=_*(5*g)+C*(5*d)+O*(5*y)+H*(5*w)+I*(5*x),a+=W>>>13,W&=8191;let q=a+A*x+U*u+L*l+B*c+E*o;a=q>>>13,q&=8191,q+=_*(5*p)+C*(5*g)+O*(5*d)+H*(5*y)+I*(5*w),a+=q>>>13,q&=8191;let X=a+A*w+U*x+L*u+B*l+E*c;a=X>>>13,X&=8191,X+=_*o+C*(5*p)+O*(5*g)+H*(5*d)+I*(5*y),a+=X>>>13,X&=8191;let P=a+A*y+U*w+L*x+B*u+E*l;a=P>>>13,P&=8191,P+=_*c+C*o+O*(5*p)+H*(5*g)+I*(5*d),a+=P>>>13,P&=8191;let Z=a+A*d+U*y+L*w+B*x+E*u;a=Z>>>13,Z&=8191,Z+=_*l+C*c+O*o+H*(5*p)+I*(5*g),a+=Z>>>13,Z&=8191;let G=a+A*g+U*d+L*y+B*w+E*x;a=G>>>13,G&=8191,G+=_*u+C*l+O*c+H*o+I*(5*p),a+=G>>>13,G&=8191;let Y=a+A*p+U*g+L*d+B*y+E*w;a=Y>>>13,Y&=8191,Y+=_*x+C*u+O*l+H*c+I*o,a+=Y>>>13,Y&=8191,a=(a<<2)+a|0,a=a+S|0,S=a&8191,a=a>>>13,V+=a,i[0]=S,i[1]=V,i[2]=T,i[3]=W,i[4]=q,i[5]=X,i[6]=P,i[7]=Z,i[8]=G,i[9]=Y}finalize(){let{h:t,pad:f}=this,n=new Uint16Array(10),s=t[1]>>>13;t[1]&=8191;for(let o=2;o<10;o++)t[o]+=s,s=t[o]>>>13,t[o]&=8191;t[0]+=s*5,s=t[0]>>>13,t[0]&=8191,t[1]+=s,s=t[1]>>>13,t[1]&=8191,t[2]+=s,n[0]=t[0]+5,s=n[0]>>>13,n[0]&=8191;for(let o=1;o<10;o++)n[o]=t[o]+s,s=n[o]>>>13,n[o]&=8191;n[9]-=8192;let i=(s^1)-1;for(let o=0;o<10;o++)n[o]&=i;i=~i;for(let o=0;o<10;o++)t[o]=t[o]&i|n[o];t[0]=(t[0]|t[1]<<13)&65535,t[1]=(t[1]>>>3|t[2]<<10)&65535,t[2]=(t[2]>>>6|t[3]<<7)&65535,t[3]=(t[3]>>>9|t[4]<<4)&65535,t[4]=(t[4]>>>12|t[5]<<1|t[6]<<14)&65535,t[5]=(t[6]>>>2|t[7]<<11)&65535,t[6]=(t[7]>>>5|t[8]<<8)&65535,t[7]=(t[8]>>>8|t[9]<<5)&65535;let r=t[0]+f[0];t[0]=r&65535;for(let o=1;o<8;o++)r=(t[o]+f[o]|0)+(r>>>16)|0,t[o]=r&65535;k(n)}update(t){ht(this),t=tt(t),F(t);let{buffer:f,blockLen:n}=this,s=t.length;for(let i=0;i<s;){let r=Math.min(n-this.pos,s-i);if(r===n){for(;n<=s-i;i+=n)this.process(t,i);continue}f.set(t.subarray(i,i+r),this.pos),this.pos+=r,i+=r,this.pos===n&&(this.process(f,0,!1),this.pos=0)}return this}destroy(){k(this.h,this.r,this.buffer,this.pad)}digestInto(t){ht(this),Ut(t,this),this.finished=!0;let{buffer:f,h:n}=this,{pos:s}=this;if(s){for(f[s++]=1;s<16;s++)f[s]=0;this.process(f,0,!0)}this.finalize();let i=0;for(let r=0;r<8;r++)t[i++]=n[r]>>>0,t[i++]=n[r]>>>8;return t}digest(){let{buffer:t,outputLen:f}=this;this.digestInto(t);let n=t.slice(0,f);return this.destroy(),n}};function ee(e){let t=(n,s)=>e(s).update(tt(n)).digest(),f=e(new Uint8Array(32));return t.outputLen=f.outputLen,t.blockLen=f.blockLen,t.create=n=>e(n),t}var Ht=ee(e=>new pt(e));function St(e,t,f,n,s,i=20){let r=e[0],o=e[1],c=e[2],l=e[3],u=t[0],x=t[1],w=t[2],y=t[3],d=t[4],g=t[5],p=t[6],b=t[7],m=s,R=f[0],N=f[1],v=f[2],K=r,M=o,D=c,A=l,U=u,L=x,B=w,E=y,_=d,C=g,O=p,H=b,I=m,a=R,S=N,V=v;for(let W=0;W<i;W+=2)K=K+U|0,I=h(I^K,16),_=_+I|0,U=h(U^_,12),K=K+U|0,I=h(I^K,8),_=_+I|0,U=h(U^_,7),M=M+L|0,a=h(a^M,16),C=C+a|0,L=h(L^C,12),M=M+L|0,a=h(a^M,8),C=C+a|0,L=h(L^C,7),D=D+B|0,S=h(S^D,16),O=O+S|0,B=h(B^O,12),D=D+B|0,S=h(S^D,8),O=O+S|0,B=h(B^O,7),A=A+E|0,V=h(V^A,16),H=H+V|0,E=h(E^H,12),A=A+E|0,V=h(V^A,8),H=H+V|0,E=h(E^H,7),K=K+L|0,V=h(V^K,16),O=O+V|0,L=h(L^O,12),K=K+L|0,V=h(V^K,8),O=O+V|0,L=h(L^O,7),M=M+B|0,I=h(I^M,16),H=H+I|0,B=h(B^H,12),M=M+B|0,I=h(I^M,8),H=H+I|0,B=h(B^H,7),D=D+E|0,a=h(a^D,16),_=_+a|0,E=h(E^_,12),D=D+E|0,a=h(a^D,8),_=_+a|0,E=h(E^_,7),A=A+U|0,S=h(S^A,16),C=C+S|0,U=h(U^C,12),A=A+U|0,S=h(S^A,8),C=C+S|0,U=h(U^C,7);let T=0;n[T++]=r+K|0,n[T++]=o+M|0,n[T++]=c+D|0,n[T++]=l+A|0,n[T++]=u+U|0,n[T++]=x+L|0,n[T++]=w+B|0,n[T++]=y+E|0,n[T++]=d+_|0,n[T++]=g+C|0,n[T++]=p+O|0,n[T++]=b+H|0,n[T++]=m+I|0,n[T++]=R+a|0,n[T++]=N+S|0,n[T++]=v+V|0}function ne(e,t,f,n){let s=e[0],i=e[1],r=e[2],o=e[3],c=t[0],l=t[1],u=t[2],x=t[3],w=t[4],y=t[5],d=t[6],g=t[7],p=f[0],b=f[1],m=f[2],R=f[3];for(let v=0;v<20;v+=2)s=s+c|0,p=h(p^s,16),w=w+p|0,c=h(c^w,12),s=s+c|0,p=h(p^s,8),w=w+p|0,c=h(c^w,7),i=i+l|0,b=h(b^i,16),y=y+b|0,l=h(l^y,12),i=i+l|0,b=h(b^i,8),y=y+b|0,l=h(l^y,7),r=r+u|0,m=h(m^r,16),d=d+m|0,u=h(u^d,12),r=r+u|0,m=h(m^r,8),d=d+m|0,u=h(u^d,7),o=o+x|0,R=h(R^o,16),g=g+R|0,x=h(x^g,12),o=o+x|0,R=h(R^o,8),g=g+R|0,x=h(x^g,7),s=s+l|0,R=h(R^s,16),d=d+R|0,l=h(l^d,12),s=s+l|0,R=h(R^s,8),d=d+R|0,l=h(l^d,7),i=i+u|0,p=h(p^i,16),g=g+p|0,u=h(u^g,12),i=i+u|0,p=h(p^i,8),g=g+p|0,u=h(u^g,7),r=r+x|0,b=h(b^r,16),w=w+b|0,x=h(x^w,12),r=r+x|0,b=h(b^r,8),w=w+b|0,x=h(x^w,7),o=o+c|0,m=h(m^o,16),y=y+m|0,c=h(c^y,12),o=o+c|0,m=h(m^o,8),y=y+m|0,c=h(c^y,7);let N=0;n[N++]=s,n[N++]=i,n[N++]=r,n[N++]=o,n[N++]=p,n[N++]=b,n[N++]=m,n[N++]=R}var re=at(St,{counterRight:!1,counterLength:4,allowShortKeys:!1}),oe=at(St,{counterRight:!1,counterLength:8,extendNonceFn:ne,allowShortKeys:!1});var se=new Uint8Array(16),It=(e,t)=>{e.update(t);let f=t.length%16;f&&e.update(se.subarray(f))},fe=new Uint8Array(32);function Tt(e,t,f,n,s){let i=e(t,f,fe),r=Ht.create(i);s&&It(r,s),It(r,n);let o=Et(n.length,s?s.length:0,!0);r.update(o);let c=r.digest();return k(i,o),c}var Rt=e=>(t,f,n)=>({encrypt(i,r){let o=i.length;r=lt(o+16,r,!1),r.set(i);let c=r.subarray(0,-16);e(t,f,c,c,1);let l=Tt(e,t,f,c,n);return r.set(l,o),k(l),r},decrypt(i,r){r=lt(i.length-16,r,!1);let o=i.subarray(0,-16),c=i.subarray(-16),l=Tt(e,t,f,o,n);if(!Bt(c,l))throw new Error("invalid tag");return r.set(i.subarray(0,-16)),e(t,f,r,r,1),k(l),r}}),Vt=ut({blockSize:64,nonceLength:12,tagLength:16},Rt(re)),Be=ut({blockSize:64,nonceLength:24,tagLength:16},Rt(oe));function ie(e){return e instanceof Uint8Array||ArrayBuffer.isView(e)&&e.constructor.name==="Uint8Array"}function ot(e,...t){if(!ie(e))throw new Error("Uint8Array expected");if(t.length>0&&!t.includes(e.length))throw new Error("Uint8Array expected of length "+t+", got length="+e.length)}function dt(e,t=!0){if(e.destroyed)throw new Error("Hash instance has been destroyed");if(t&&e.finished)throw new Error("Hash#digest() has already been called")}function Nt(e,t){ot(e);let f=t.outputLen;if(e.length<f)throw new Error("digestInto() expects output buffer of length at least "+f)}function z(...e){for(let t=0;t<e.length;t++)e[t].fill(0)}function st(e){return new DataView(e.buffer,e.byteOffset,e.byteLength)}function jt(e,t){return e<<t|e>>>32-t>>>0}function ce(e){if(typeof e!="string")throw new Error("string expected");return new Uint8Array(new TextEncoder().encode(e))}function gt(e){return typeof e=="string"&&(e=ce(e)),ot(e),e}var rt=class{};function Kt(e){let t=n=>e().update(gt(n)).digest(),f=e();return t.outputLen=f.outputLen,t.blockLen=f.blockLen,t.create=()=>e(),t}function he(e,t,f,n){if(typeof e.setBigUint64=="function")return e.setBigUint64(t,f,n);let s=BigInt(32),i=BigInt(4294967295),r=Number(f>>s&i),o=Number(f&i),c=n?4:0,l=n?0:4;e.setUint32(t+c,r,n),e.setUint32(t+l,o,n)}function yt(e,t,f){return e&t^~e&f}var ft=class extends rt{constructor(t,f,n,s){super(),this.finished=!1,this.length=0,this.pos=0,this.destroyed=!1,this.blockLen=t,this.outputLen=f,this.padOffset=n,this.isLE=s,this.buffer=new Uint8Array(t),this.view=st(this.buffer)}update(t){dt(this),t=gt(t),ot(t);let{view:f,buffer:n,blockLen:s}=this,i=t.length;for(let r=0;r<i;){let o=Math.min(s-this.pos,i-r);if(o===s){let c=st(t);for(;s<=i-r;r+=s)this.process(c,r);continue}n.set(t.subarray(r,r+o),this.pos),this.pos+=o,r+=o,this.pos===s&&(this.process(f,0),this.pos=0)}return this.length+=t.length,this.roundClean(),this}digestInto(t){dt(this),Nt(t,this),this.finished=!0;let{buffer:f,view:n,blockLen:s,isLE:i}=this,{pos:r}=this;f[r++]=128,z(this.buffer.subarray(r)),this.padOffset>s-r&&(this.process(n,0),r=0);for(let x=r;x<s;x++)f[x]=0;he(n,s-8,BigInt(this.length*8),i),this.process(n,0);let o=st(t),c=this.outputLen;if(c%4)throw new Error("_sha2: outputLen should be aligned to 32bit");let l=c/4,u=this.get();if(l>u.length)throw new Error("_sha2: outputLen bigger than state");for(let x=0;x<l;x++)o.setUint32(4*x,u[x],i)}digest(){let{buffer:t,outputLen:f}=this;this.digestInto(t);let n=t.slice(0,f);return this.destroy(),n}_cloneInto(t){t||(t=new this.constructor),t.set(...this.get());let{blockLen:f,buffer:n,length:s,finished:i,destroyed:r,pos:o}=this;return t.destroyed=r,t.finished=i,t.length=s,t.pos=o,s%f&&t.buffer.set(n),t}clone(){return this._cloneInto()}};var ue=Uint32Array.from([1732584193,4023233417,2562383102,271733878,3285377520]);var le=Math.pow(2,32),xe=Array.from({length:64},(e,t)=>Math.floor(le*Math.abs(Math.sin(t+1)))),it=ue.slice(0,4),wt=new Uint32Array(16),bt=class extends ft{constructor(){super(64,16,8,!0),this.A=it[0]|0,this.B=it[1]|0,this.C=it[2]|0,this.D=it[3]|0}get(){let{A:t,B:f,C:n,D:s}=this;return[t,f,n,s]}set(t,f,n,s){this.A=t|0,this.B=f|0,this.C=n|0,this.D=s|0}process(t,f){for(let o=0;o<16;o++,f+=4)wt[o]=t.getUint32(f,!0);let{A:n,B:s,C:i,D:r}=this;for(let o=0;o<64;o++){let c,l,u;o<16?(c=yt(s,i,r),l=o,u=[7,12,17,22]):o<32?(c=yt(r,s,i),l=(5*o+1)%16,u=[5,9,14,20]):o<48?(c=s^i^r,l=(3*o+5)%16,u=[4,11,16,23]):(c=i^(s|~r),l=7*o%16,u=[6,10,15,21]),c=c+n+xe[o]+wt[l],n=r,r=i,i=s,s=s+jt(c,u[o%4])}n=n+this.A|0,s=s+this.B|0,i=i+this.C|0,r=r+this.D|0,this.set(n,s,i,r)}roundClean(){z(wt)}destroy(){this.set(0,0,0,0),z(this.buffer)}},Mt=Kt(()=>new bt);return kt(ae);})();
+/*! Bundled license information:
+
+@noble/ciphers/esm/utils.js:
+  (*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) *)
+
+@noble/hashes/esm/utils.js:
+  (*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) *)
+*/
+
+// SS AEAD TCP outbound. Only SIP004 ciphers; SS2022 and SIP003 plugins are rejected.
+function ssIsConfigured(value) {
+  return /^ss:\/\//i.test(String(value || '').trim());
+}
+function ssBase64Text(value) {
+  const text = decodeURIComponent(value).replace(/-/g, '+').replace(/_/g, '/');
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(text) || text.length % 4 === 1) throw new Error('SS Base64 格式无效');
+  const binary = atob(text.padEnd(Math.ceil(text.length / 4) * 4, '='));
+  return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(binary, c => c.charCodeAt(0)));
+}
+function 解析影梭配置(value) {
+  let body = String(value || '').trim().slice(5).split('#', 1)[0];
+  const queryAt = body.indexOf('?');
+  if (queryAt >= 0) {
+    const params = new URLSearchParams(body.slice(queryAt + 1));
+    if (params.getAll('plugin').some(v => v)) throw new Error('不支持 SS plugin，请使用无插件的 SS 节点');
+    body = body.slice(0, queryAt);
+  }
+  if (!body.includes('@')) body = ssBase64Text(body); // legacy whole-URL Base64
+  const at = body.lastIndexOf('@');
+  if (at < 1) throw new Error('SS 链接缺少认证或服务器地址');
+  const auth = body.slice(0, at);
+  const credentials = auth.includes(':') ? auth : ssBase64Text(auth);
+  const colon = credentials.indexOf(':');
+  if (colon < 1) throw new Error('SS 链接缺少加密方式或密码');
+  const method = (auth.includes(':') ? decodeURIComponent(credentials.slice(0, colon)) : credentials.slice(0, colon)).toLowerCase();
+  const password = auth.includes(':') ? decodeURIComponent(credentials.slice(colon + 1)) : credentials.slice(colon + 1);
+  if (!['chacha20-ietf-poly1305', 'aes-128-gcm', 'aes-256-gcm'].includes(method)) {
+    throw new Error('SS 仅支持 chacha20-ietf-poly1305、aes-128-gcm、aes-256-gcm；不支持 SS2022');
+  }
+  if (!password) throw new Error('SS 密码不能为空');
+  const endpoint = body.slice(at + 1).replace(/\/$/, '');
+  if (!/^(?:\[[0-9a-fA-F:.]+\]|[^\s:/?#@]+):[0-9]+$/.test(endpoint)) throw new Error('SS 服务器格式应为 host:port 或 [IPv6]:port');
+  let url;
+  try { url = new URL('http://' + endpoint); } catch { throw new Error('SS 服务器地址无效'); }
+  const port = Number(endpoint.slice(endpoint.lastIndexOf(':') + 1));
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SS 端口必须在 1–65535');
+  return { kind: 'ss', method, password, hostname: url.hostname.replace(/^\[|\]$/g, ''), socksPort: port };
+}
+function ssConcat(...parts) {
+  const result = new Uint8Array(parts.reduce((n, part) => n + part.length, 0));
+  let offset = 0;
+  for (const part of parts) { result.set(part, offset); offset += part.length; }
+  return result;
+}
+function ssTargetAddress(host, port) {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SS 目标端口无效');
+  host = String(host).replace(/^\[|\]$/g, '');
+  let address;
+  if (host.includes(':')) {
+    // URL canonicalizes IPv6, including IPv4-mapped IPv6. Expand its :: to 8 words.
+    let canonical;
+    try { canonical = new URL('http://[' + host + ']/').hostname.slice(1, -1); }
+    catch { throw new Error('SS 目标 IPv6 无效'); }
+    const halves = canonical.split('::');
+    const left = halves[0] ? halves[0].split(':') : [];
+    const right = halves.length > 1 && halves[1] ? halves[1].split(':') : [];
+    const words = halves.length > 1 ? [...left, ...Array(8 - left.length - right.length).fill('0'), ...right] : left;
+    if (words.length !== 8) throw new Error('SS 目标 IPv6 无效');
+    address = new Uint8Array(17); address[0] = 4;
+    words.forEach((word, i) => { const n = parseInt(word, 16); address[1 + i * 2] = n >>> 8; address[2 + i * 2] = n & 255; });
+  } else if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+    const numbers = host.split('.').map(Number);
+    if (numbers.some(n => n > 255)) throw new Error('SS 目标 IPv4 无效');
+    address = new Uint8Array([1, ...numbers]);
+  } else {
+    const name = new TextEncoder().encode(host);
+    if (!name.length || name.length > 255) throw new Error('SS 目标域名长度无效');
+    address = ssConcat(new Uint8Array([3, name.length]), name);
+  }
+  return ssConcat(address, new Uint8Array([port >>> 8, port & 255]));
+}
+function ssMasterKey(password, size) {
+  const pass = new TextEncoder().encode(password);
+  let digest = new Uint8Array(0), key = new Uint8Array(0);
+  while (key.length < size) { digest = SsCrypto.md5(ssConcat(digest, pass)); key = ssConcat(key, digest); }
+  return key.slice(0, size);
+}
+async function ssSubkey(master, salt) {
+  const base = await crypto.subtle.importKey('raw', master, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-1', salt, info: new TextEncoder().encode('ss-subkey') }, base, master.length * 8));
+}
+async function ssCipher(method, key) {
+  const nonce = new Uint8Array(12);
+  const aesKey = method === 'chacha20-ietf-poly1305' ? null : await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  let exhausted = false;
+  return async (data, decrypt = false) => {
+    if (exhausted) throw new Error('SS nonce 已耗尽');
+    const iv = nonce.slice();
+    let output;
+    if (aesKey) {
+      output = new Uint8Array(await crypto.subtle[decrypt ? 'decrypt' : 'encrypt']({ name: 'AES-GCM', iv, tagLength: 128 }, aesKey, data));
+    } else {
+      output = SsCrypto.chacha20poly1305(key, iv)[decrypt ? 'decrypt' : 'encrypt'](data);
+    }
+    for (let i = 0; i < nonce.length; i++) {
+      nonce[i] = (nonce[i] + 1) & 255;
+      if (nonce[i]) break;
+      if (i === nonce.length - 1) exhausted = true;
+    }
+    return output;
+  };
+}
+async function ssWithTimeout(promise, onTimeout, ms = 10000) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => { onTimeout(); reject(new Error('SS 连接超时')); }, ms);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+async function 处理值影梭连接(host, port, config, request = null, firstData = null) {
+  // Copy the config now: later management saves must not change an established session's keys.
+  config = { ...config };
+  const target = ssTargetAddress(host, port);
+  const size = config.method === 'aes-128-gcm' ? 16 : 32;
+  const master = ssMasterKey(config.password, size);
+  const raw = 处理打开值套接字(config.hostname, config.socksPort, request);
+  let rawWriter, rawReader, readController, writeController, stopped = false, settled = false;
+  let resolveClosed, rejectClosed;
+  const closed = new Promise((resolve, reject) => { resolveClosed = resolve; rejectClosed = reject; });
+  closed.catch(() => {});
+  function settle(error) {
+    if (settled) return;
+    settled = true;
+    if (error) rejectClosed(error); else resolveClosed();
+  }
+  function stop(error) {
+    if (stopped) return;
+    stopped = true;
+    try { raw.close(); } catch {}
+    if (rawReader) rawReader.cancel(error).catch(() => {}).finally(() => { try { rawReader.releaseLock(); } catch {} });
+    if (rawWriter) rawWriter.abort(error).catch(() => {}).finally(() => { try { rawWriter.releaseLock(); } catch {} });
+    if (error) {
+      try { readController?.error(error); } catch {}
+      try { writeController?.error(error); } catch {}
+    }
+    settle(error);
+  }
+  raw.closed?.catch(error => stop(error));
+  try {
+    await ssWithTimeout(raw.opened || Promise.resolve(), () => stop(new Error('SS 建连超时')));
+    rawWriter = raw.writable.getWriter();
+    rawReader = raw.readable.getReader();
+    const salt = crypto.getRandomValues(new Uint8Array(size));
+    const encrypt = await ssCipher(config.method, await ssSubkey(master, salt));
+    async function send(data) {
+      data = 处理值值8数组(data);
+      for (let offset = 0; offset < data.length; offset += 0x3fff) {
+        if (stopped) throw new Error('SS 连接已关闭');
+        const piece = data.subarray(offset, offset + 0x3fff);
+        const length = await encrypt(new Uint8Array([piece.length >>> 8, piece.length & 255]));
+        const payload = await encrypt(piece);
+        await rawWriter.write(ssConcat(length, payload));
+      }
+    }
+    await ssWithTimeout((async () => {
+      await rawWriter.write(salt);
+      await send(ssConcat(target, firstData ? 处理值值8数组(firstData) : new Uint8Array(0)));
+    })(), () => stop(new Error('SS 首包发送超时')));
+    let pending = new Uint8Array(0), pendingOffset = 0;
+    async function readExact(count, allowEOF = false) {
+      const result = new Uint8Array(count);
+      let filled = 0;
+      while (filled < count) {
+        if (pendingOffset === pending.length) {
+          const part = await rawReader.read();
+          if (part.done) {
+            if (!filled && allowEOF) return null;
+            throw new Error('SS 响应被截断');
+          }
+          pending = 处理值值8数组(part.value); pendingOffset = 0;
+          if (!pending.length) continue;
+        }
+        const take = Math.min(count - filled, pending.length - pendingOffset);
+        result.set(pending.subarray(pendingOffset, pendingOffset + take), filled);
+        pendingOffset += take; filled += take;
+      }
+      return result;
+    }
+    let decrypt;
+    const readable = new ReadableStream({
+      start(controller) { readController = controller; },
+      async pull(controller) {
+        try {
+          if (!decrypt) {
+            const responseSalt = await readExact(size);
+            if (responseSalt.every((v, i) => v === salt[i])) throw new Error('SS 响应 salt 不可与请求相同');
+            decrypt = await ssCipher(config.method, await ssSubkey(master, responseSalt));
+          }
+          // Empty authenticated frames are legal: keep pulling until data or EOF.
+          for (;;) {
+            const encryptedLength = await readExact(18, true);
+            if (encryptedLength === null) {
+              controller.close();
+              try { rawReader.releaseLock(); } catch {}
+              settle();
+              return;
+            }
+            const lengthBytes = await decrypt(encryptedLength, true);
+            const length = (lengthBytes[0] << 8) | lengthBytes[1];
+            if (length > 0x3fff) throw new Error('SS 帧长度无效');
+            const payload = await decrypt(await readExact(length + 16), true);
+            if (payload.length) { controller.enqueue(payload); return; }
+          }
+        } catch (error) { stop(error); }
+      },
+      cancel() { stop(); }
+    }, { highWaterMark: 0 });
+    const writable = new WritableStream({
+      start(controller) { writeController = controller; },
+      async write(data) { try { await send(data); } catch (error) { stop(error); throw error; } },
+      async close() {
+        try { await rawWriter.close(); rawWriter.releaseLock(); }
+        catch (error) { stop(error); throw error; }
+      },
+      abort(error) { stop(error instanceof Error ? error : undefined); }
+    });
+    return { readable, writable, opened: raw.opened, closed, close: () => stop(), isShadowsocks: true };
+  } catch (error) { stop(error); throw error; }
+}
+
 const 基础64文本解码器 = new TextDecoder();
 function 解码64(文本) {
   const 二进制 = atob(文本);
@@ -119,6 +398,7 @@ function 整理有效配置(配置) {
   if (快照.ech === 'yes') {
     快照.dkby = 'yes';
   }
+  if (ssIsConfigured(快照.s)) 快照.qj = 'only';
   return 快照;
 }
 
@@ -655,7 +935,8 @@ export default {
           已解析代理5配置 = 解析代理配置(代理5配置);
           是否代理已启用 = true;
         } catch (错误722) {
-          是否代理已启用 = false;
+          已解析代理5配置 = { kind: 'invalid', error: ssIsConfigured(代理5配置) ? 'SS 配置无效，请在管理页检查链接' : '出站代理配置无效' };
+          是否代理已启用 = !!代理5配置;
         }
       } else {
         已解析代理5配置 = {};
@@ -704,7 +985,8 @@ export default {
       const 值控制711 = 获取配置文本值('qj', 配置默认值.qj, 本地值734.qj || 本地值734.QJ);
       const 值控制711值 = (值控制711 || '').toLowerCase();
       启用代理降级 = 值控制711值 === 'no';
-      仅走代理 = 值控制711值 === 'only';
+      仅走代理 = 值控制711值 === 'only' || ssIsConfigured(代理5配置);
+      if (ssIsConfigured(代理5配置)) 启用代理降级 = false;
       const 值控制710 = 获取配置文本值('dkby', 配置默认值.dkby, 本地值734.dkby || 本地值734.DKBY);
       禁用非传输层安全 = !!(值控制710 && 值控制710.toLowerCase() === 'yes');
       const 值控制709 = 获取配置文本值('yxby', 配置默认值.yxby, 本地值734.yxby || 本地值734.YXBY);
@@ -3329,8 +3611,9 @@ async function 处理网页套接字请求(请求417) {
   const 请求值字符串 = 请求网址.searchParams.get('rm') || '';
   const 请求值414 = 请求值字符串 ? 请求值字符串.toLowerCase() !== 'no' : null;
   const 请求代理字符串 = 请求网址.searchParams.get('s') || '';
-  let 请求代理配置413 = null;
-  if (请求代理字符串) {
+  const 服务端SS锁定 = ssIsConfigured(代理5配置);
+  let 请求代理配置413 = 服务端SS锁定 ? { ...已解析代理5配置 } : null;
+  if (请求代理字符串 && !服务端SS锁定) {
     try {
       请求代理配置413 = 解析代理配置(请求代理字符串);
     } catch (忽略值412) {}
@@ -3417,7 +3700,7 @@ async function 处理网页套接字请求(请求417) {
     async write(块397) {
       if (传输值) return;
       const 数据396 = 处理值值8数组(块397);
-      if (是否域名系统值) return await 处理值用户数据报(数据396, 值值410, null, 请求值407);
+      if (是否域名系统值) return await 处理值用户数据报(数据396, 值值410, null, 请求值407, 服务端SS锁定 ? 请求代理配置413 : null);
       if (远程连接值409.socket && 远程连接值409.writer) {
         if (!处理队列值(数据396)) throw new Error('upload queue overflow');
         return;
@@ -3444,7 +3727,7 @@ async function 处理网页套接字请求(请求417) {
             }
             const 值头部390 = new Uint8Array([本地值392[0], 0]);
             const 原始数据389 = 数据396.subarray(原始索引);
-            if (是否域名系统值) return 处理值用户数据报(原始数据389, 值值410, 值头部390, 请求值407);
+            if (是否域名系统值) return 处理值用户数据报(原始数据389, 值值410, 值头部390, 请求值407, 服务端SS锁定 ? 请求代理配置413 : null);
             await 处理值值384(地址类型395, 主机名393, 端口394, 原始数据389, 值值410, 值头部390, 远程连接值409, 请求回退416, 实际地区411, 请求值414, 请求代理配置413, 请求值407);
             return;
           }
@@ -3481,6 +3764,8 @@ async function 处理值值384(地址类型383, 主机, 端口数字, 原始数�
   const 实际地区匹配 = 请求值380 !== null ? 请求值380 : 启用地区匹配;
   const 实际代理配置 = 请求代理配置 || 已解析代理5配置;
   const 实际代理已启用 = 请求代理配置 ? true : 是否代理已启用;
+  const 实际仅走代理 = 仅走代理 || 实际代理配置?.kind === 'ss' || 实际代理配置?.kind === 'invalid';
+  const 实际代理降级 = !实际仅走代理 && 启用代理降级;
   const 值数据378 = 处理值值8数组(原始数据);
   async function 连接值发送(地址377, 端口376, 值代理 = false) {
     // 走代理时首包交给握手函数在释放写入器前发出，避免换写入器导致连接被重置
@@ -3510,7 +3795,7 @@ async function 处理值值384(地址类型383, 主机, 端口数字, 原始数�
     远程连接值.writer = 写入器369;
     远程连接值.drainUpload?.();
     远程值370.closed.catch(() => {}).finally(() => {
-      if (远程连接值.socket === 远程值370) 关闭套接字值(网页套接字382);
+      if (!远程值370.isShadowsocks && 远程连接值.socket === 远程值370) 关闭套接字值(网页套接字382);
     });
     连接值279(远程值370, 网页套接字382, 值头部381, 重试值368).finally(() => {
       if (远程连接值.socket === 远程值370) {
@@ -3518,16 +3803,17 @@ async function 处理值值384(地址类型383, 主机, 端口数字, 原始数�
           写入器369.releaseLock();
         } catch (忽略值366) {}
         远程连接值.writer = null;
+        if (远程值370.isShadowsocks) { 远程值370.close(); 关闭套接字值(网页套接字382); }
       }
     });
   }
   async function 处理重试连接() {
     // 只走代理：不回落到直连或备用地址，避免出口 IP 泄漏
-    if (仅走代理 && 实际代理已启用) {
+    if (实际仅走代理 && 实际代理已启用) {
       关闭套接字值(网页套接字382);
       return;
     }
-    if (启用代理降级 && 实际代理已启用) {
+    if (实际代理降级 && 实际代理已启用) {
       try {
         const {
           remoteSock: 代理套接字,
@@ -3580,7 +3866,7 @@ async function 处理值值384(地址类型383, 主机, 端口数字, 原始数�
   }
   try {
     // 首跳是否走代理：只走代理 → 必走；优先直连 → 不走；其余按代理是否配置
-    const 首跳走代理 = 仅走代理 && 实际代理已启用 ? true : 启用代理降级 ? false : 实际代理已启用;
+    const 首跳走代理 = 实际仅走代理 && 实际代理已启用 ? true : 实际代理降级 ? false : 实际代理已启用;
     const {
       remoteSock: 值套接字358,
       writer: 值写入器
@@ -3985,17 +4271,19 @@ async function 连接值279(远程套接字, 网页套接字278, 头部数据, �
   }
   if (!是否有数据 && !本地值276 && 重试值) 重试值();
 }
-async function 处理值用户数据报(用户数据报块, 网页套接字, 值头部, 请求值 = null) {
+async function 处理值用户数据报(用户数据报块, 网页套接字, 值头部, 请求值 = null, 代理配置 = null) {
   try {
-    const 值套接字 = await 连接值套接字('8.8.4.4', 53, 请求值, 1);
+    const 值套接字 = 代理配置 ? await 处理值代理连接(地址类型_网址, '8.8.4.4', 53, 代理配置, 请求值) : await 连接值套接字('8.8.4.4', 53, 请求值, 1);
     let 头部 = 值头部;
     const 写入器264 = 值套接字.writable.getWriter();
     await 写入器264.write(用户数据报块);
     写入器264.releaseLock();
-    await 连接值279(值套接字, 网页套接字, 头部, null);
-  } catch (错误263) {}
+    try { await 连接值279(值套接字, 网页套接字, 头部, null); } finally { 值套接字.close(); }
+  } catch (错误263) { if (代理配置) 关闭套接字值(网页套接字); }
 }
 async function 处理值代理连接(地址类型, 地址262, 端口261, 代理配置 = 已解析代理5配置, 请求值258 = null, 首包数据 = null) {
+  if (代理配置?.kind === 'invalid') throw new Error(代理配置.error);
+  if (代理配置?.kind === 'ss') return 处理值影梭连接(地址262, 端口261, 代理配置, 请求值258, 首包数据);
   // 按代理种类分派：隧道走建隧请求，其余保持套接字5 握手
   if (代理配置 && (代理配置.kind === 代理种类_隧道 || 代理配置.kind === 代理种类_安全隧道)) {
     return 处理值隧道连接(地址262, 端口261, 代理配置, 请求值258, 首包数据);
@@ -4183,6 +4471,7 @@ function 包装残留套接字(套接字, 残留数据) {
   };
 }
 function 解析代理配置(地址249) {
+  if (ssIsConfigured(地址249)) return 解析影梭配置(地址249);
   let 剩余地址 = String(地址249 || '').trim();
   // 按前缀识别代理种类，无前缀保持原有行为（套接字5）
   let 代理种类 = 代理种类_套接字5;
@@ -4310,7 +4599,7 @@ async function 处理订阅值(请求241, 用户240 = null) {
       fetchURLPlaceholder: '输入优选IP的URL地址',
       generateIP: '生成IP',
       fetchIP: '获取IP',
-      socks5Config: 解码64('5Luj55CG6YWN572uIChzKTo='),
+      socks5Config: '出站代理 / SS 落地节点 (s):',
       customHomepage: '自定义首页URL (homepage):',
       customHomepagePlaceholder: '例如: https://example.com',
       customHomepageHint: '设置自定义URL作为首页伪装。访问根路径 / 时将显示该URL的内容。留空则显示默认终端页面。',
@@ -4475,7 +4764,7 @@ async function 处理订阅值(请求241, 用户240 = null) {
       fetchURLPlaceholder: 'آدرس URL لیست IP را وارد کنید',
       generateIP: 'تولید IP',
       fetchIP: 'دریافت IP',
-      socks5Config: 解码64('2KrZhti424zZhdin2Kog2b7YsdmI2qnYs9uMIChzKTo='),
+      socks5Config: 'Outbound proxy / Shadowsocks (s):',
       customHomepage: 'URL صفحه اصلی سفارشی (homepage):',
       customHomepagePlaceholder: 'مثال: https://example.com',
       customHomepageHint: 'تنظیم URL سفارشی به عنوان استتار صفحه اصلی. هنگام دسترسی به مسیر اصلی / محتوای این URL نمایش داده می‌شود. اگر خالی بگذارید صفحه ترمینال پیش‌فرض نمایش داده می‌شود.',
@@ -5742,8 +6031,10 @@ async function 处理订阅值(请求241, 用户240 = null) {
 
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00f0ff; font-weight: bold; text-shadow: 0 0 3px #00f0ff;">${翻译值.socks5Config}</label>
-                                <input type="text" id="socksConfig" placeholder="${是否值236 ? 解码64('2YXYq9in2YQ6IHVzZXI6cGFzc0Bob3N0OnBvcnQg24zYpyBodHRwOi8vdXNlcjpwYXNzQGhvc3Q6cG9ydA==') : 解码64('5L6L5aaCOiB1c2VyOnBhc3NAaG9zdDpwb3J0IOaIliBodHRwOi8vdXNlcjpwYXNzQGhvc3Q6cG9ydA==')}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00f0ff; color: #00f0ff; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #7aa9c4; font-size: 0.85rem;">${是否值236 ? 解码64('2KLYr9ix2LMg2b7YsdmI2qnYs9uMINiu2LHZiNis24wg2KjYsdin24wg2KfZhtiq2YLYp9mEINiq2YXYp9mFINiq2LHYp9mB24zaqSDYrtix2YjYrNuMLiDYqNiv2YjZhiDZvtuM2LTZiNmG2K8g2KjZhyDYtdmI2LHYqiBzNSDYr9ixINmG2LjYsSDar9ix2YHYqtmHINmF24zigIzYtNmI2K8=') : 解码64('5Ye656uZ5Luj55CG5Zyw5Z2A77yM55So5LqO6L2s5Y+R5omA5pyJ5Ye656uZ5rWB6YeP44CC5LiN5YaZ5YmN57yA6buY6K6k5oyJIHM1IOWkhOeQhg==')}</small>
+                                <input type="password" id="socksConfig" autocomplete="off" spellcheck="false" placeholder="粘贴完整 ss:// 链接，或 socks5:// / http:// / https://" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00f0ff; color: #00f0ff; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <button type="button" onclick="const el=document.getElementById('socksConfig');el.type=el.type==='password'?'text':'password';" style="margin-top: 8px; cursor: pointer;">显示 / 隐藏节点链接</button>
+                                <div id="ssOutboundStatus" role="status" style="margin-top: 8px; color: #7aa9c4; word-break: break-all;"></div>
+                                <small style="display: block; margin-top: 8px; color: #7aa9c4; font-size: 0.85rem;">SS 支持 chacha20-ietf-poly1305、aes-128-gcm、aes-256-gcm；不支持 SS2022 / plugin。填 SS 后自动只走落地，故障不直连。修改后点击保存，新连接使用新落地；无需在客户端配置链式。页面保存需要绑定 KV：C。</small>
                         </div>
                     </form>
 
@@ -6512,6 +6803,25 @@ async function 测试接口() {
 }
 
 // 配置管理相关函数
+${ssIsConfigured.toString()}
+${ssBase64Text.toString()}
+${解析影梭配置.toString()}
+function 更新SS落地状态() {
+  const el = document.getElementById('socksConfig');
+  const status = document.getElementById('ssOutboundStatus');
+  if (!el || !status) return;
+  const value = el.value.trim();
+  if (!value) { status.textContent = '未配置落地代理'; return; }
+  if (!ssIsConfigured(value)) { status.textContent = '使用原有 SOCKS5 / HTTP / HTTPS 出站代理'; return; }
+  try {
+    const parsed = 解析影梭配置(value);
+    status.textContent = 'Shadowsocks · ' + parsed.method + ' · ' + parsed.hostname + ':' + parsed.socksPort + ' · 只走落地（格式有效，未测试连通性）';
+    status.style.color = '#00ff9d';
+    const mode = document.getElementById('downgradeControl');
+    if (mode) mode.value = 'only';
+  } catch (error) { status.textContent = error.message; status.style.color = '#ff7373'; }
+}
+document.getElementById('socksConfig')?.addEventListener('input', 更新SS落地状态);
 async function 检查键值状态() {
   const 接口网址20134 = window.location.pathname + '/api/config';
   try {
@@ -6696,6 +7006,7 @@ function 应用配置到界面(配置) {
   写入字段值('apiEnabled', 配置.ae);
   写入字段值('regionMatching', 配置.rm);
   写入字段值('downgradeControl', 配置.qj);
+  更新SS落地状态();
   写入字段值('portControl', 配置.dkby);
   写入字段值('preferredControl', 配置.yxby);
   同步联动界面状态();
@@ -6765,7 +7076,7 @@ async function 加载当前配置() {
     const 显示配置 = {};
     for (const [键20114, 值20113] of Object.entries(配置)) {
       if (键20114 !== 'kvEnabled') {
-        显示配置[键20114] = 值20113;
+        显示配置[键20114] = 键20114 === 's' && ssIsConfigured(值20113) ? 'Shadowsocks（节点凭据已隐藏）' : 值20113;
       }
     }
     let 配置文本 = '当前配置:\\n';
@@ -6830,6 +7141,10 @@ function 更新工作器地区状态() {
   }
 }
 async function 保存配置(配置数据20107) {
+  if (ssIsConfigured(配置数据20107.s)) {
+    try { 解析影梭配置(配置数据20107.s); 配置数据20107.qj = 'only'; }
+    catch (error) { 显示状态(error.message, 'error'); return; }
+  }
   const 接口网址 = window.location.pathname + '/api/config';
   try {
     const 响应20106 = await fetch(接口网址, {
@@ -8515,10 +8830,14 @@ function 装配扩展超文本连接(首包, 远程套接字) {
 }
 // 出站决策与 ws 的 处理值值384 对齐：接入 s（代理）、wk/rm（地区匹配备用地址）、qj（代理降级/仅走代理）
 async function 连接值远程扩展超文本(首包, 请求值扩展 = null) {
+  const 本次代理配置 = { ...已解析代理5配置 };
+  const 本次代理启用 = 是否代理已启用;
+  const 本次仅代理 = 仅走代理 || 本次代理配置.kind === 'ss' || 本次代理配置.kind === 'invalid';
+  const 本次降级 = !本次仅代理 && 启用代理降级;
   const 主机 = 首包.hostname;
   const 端口 = 首包.port;
   const 直连 = async (地址, 端口值) => 连接值套接字(地址, 端口值, 请求值扩展, 传输连接竞速数);
-  const 走代理 = async (地址, 端口值) => 处理值代理连接(地址类型_网址, 地址, 端口值, 已解析代理5配置, 请求值扩展, null);
+  const 走代理 = async (地址, 端口值) => 处理值代理连接(地址类型_网址, 地址, 端口值, 本次代理配置, 请求值扩展, null);
   // 计算回退目标：优先 p（回退地址），否则按 wk/rm 取地区匹配备用地址
   const 取回退目标 = async () => {
     if (回退地址 && 回退地址.trim()) {
@@ -8537,15 +8856,15 @@ async function 连接值远程扩展超文本(首包, 请求值扩展 = null) {
       port: 端口
     };
   };
-  const 首跳走代理 = 仅走代理 && 是否代理已启用 ? true : 启用代理降级 ? false : 是否代理已启用;
+  const 首跳走代理 = 本次仅代理 && 本次代理启用 ? true : 本次降级 ? false : 本次代理启用;
   try {
     const 套接字 = 首跳走代理 ? await 走代理(主机, 端口) : await 直连(主机, 端口);
     return 装配扩展超文本连接(首包, 套接字);
   } catch (首跳错误) {
     // 只走代理：首跳失败不回落直连，避免出口 IP 泄漏
-    if (仅走代理 && 是否代理已启用) return null;
+    if (本次仅代理 && 本次代理启用) return null;
     try {
-      if (启用代理降级 && 是否代理已启用) {
+      if (本次降级 && 本次代理启用) {
         try {
           const 代理套接字 = await 走代理(主机, 端口);
           return 装配扩展超文本连接(首包, 代理套接字);
@@ -8556,7 +8875,7 @@ async function 连接值远程扩展超文本(首包, 请求值扩展 = null) {
         }
       }
       const 回退 = await 取回退目标();
-      const 回退套接字 = 是否代理已启用 ? await 走代理(回退.address, 回退.port) : await 直连(回退.address, 回退.port);
+      const 回退套接字 = 本次代理启用 ? await 走代理(回退.address, 回退.port) : await 直连(回退.address, 回退.port);
       return 装配扩展超文本连接(首包, 回退套接字);
     } catch (回退错误) {
       return null;
@@ -8857,6 +9176,20 @@ async function 处理配置接口(请求54, 环境值 = {}) {
     }
     try {
       const 新配置 = await 请求54.json();
+      if (!新配置 || typeof 新配置 !== 'object' || Array.isArray(新配置)) throw new Error('配置必须为 JSON 对象');
+      const 候选配置 = { ...键值配置 };
+      for (const [键, 值] of Object.entries(新配置)) {
+        if (值 === '' || 值 === null || 值 === undefined) delete 候选配置[键];
+        else 候选配置[键] = 值;
+      }
+      // Explicitly combine the environment and candidate KV instead of the current cached KV.
+      const 出站文本 = String(候选配置.s ?? 获取环境配置快照(环境值).s ?? '').trim();
+      try {
+        if (出站文本) 解析代理配置(出站文本);
+      } catch (error) {
+        return new Response(JSON.stringify({ success: false, message: '出站配置无效：' + error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (ssIsConfigured(出站文本)) 新配置.qj = 'only';
       for (const [键, 值] of Object.entries(新配置)) {
         if (值 === '' || 值 === null || 值 === undefined) {
           delete 键值配置[键];
@@ -9139,12 +9472,14 @@ function 更新配置值() {
   优选地址源 = 有效配置.yxURL || '';
   回退地址 = 有效配置.p ? 有效配置.p.trim() : '';
   代理5配置 = 有效配置.s || '';
+  if (ssIsConfigured(代理5配置)) { 仅走代理 = true; 启用代理降级 = false; }
   if (代理5配置) {
     try {
       已解析代理5配置 = 解析代理配置(代理5配置);
       是否代理已启用 = true;
     } catch (错误31) {
-      是否代理已启用 = false;
+      已解析代理5配置 = { kind: 'invalid', error: ssIsConfigured(代理5配置) ? 'SS 配置无效，请在管理页检查链接' : '出站代理配置无效' };
+      是否代理已启用 = !!代理5配置;
     }
   } else {
     已解析代理5配置 = {};
